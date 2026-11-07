@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INNOVISION 2026 — Live Type Racer Architecture Documentation</title>
+  <style>
+    :root {
+      --bg: #FBF8F3;
+      --card-bg: #FFFFFF;
+      --text-main: #1C1917;
+      --text-muted: #5F5852;
+      --accent: #C2410C;
+      --accent-light: #FFF4EC;
+      --border: #E2D9CC;
+      --code-bg: #17151F;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0D111C;
+        --card-bg: #17151F;
+        --text-main: #F3F4F6;
+        --text-muted: #9CA3AF;
+        --accent: #FB923C;
+        --accent-light: rgba(251, 146, 60, 0.15);
+        --border: rgba(255, 255, 255, 0.12);
+        --code-bg: #07090E;
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text-main);
+      background-color: var(--bg);
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    .header-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 32px;
+      margin: 0 0 8px 0;
+      font-weight: 900;
+      color: var(--text-main);
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      margin-bottom: 24px;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-main);
+    }
+    .btn-secondary:hover {
+      background: var(--accent-light);
+    }
+    h2 {
+      font-size: 22px;
+      margin-top: 36px;
+      margin-bottom: 16px;
+      color: var(--text-main);
+      border-bottom: 2px solid var(--accent-light);
+      padding-bottom: 6px;
+    }
+    h3 {
+      font-size: 17px;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    p, li {
+      color: var(--text-muted);
+      font-size: 14.5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: var(--accent-light);
+      color: var(--text-main);
+      font-weight: 700;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      background: var(--code-bg);
+      color: #38BDF8;
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .flow-diagram {
+      background: var(--code-bg);
+      color: #E2E8F0;
+      padding: 20px;
+      border-radius: 16px;
+      line-height: 1.5;
+      font-family: monospace;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    @media print {
+      body {
+        background: #FFFFFF;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .actions {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-badge">INNOVISION 2026 Technical Architecture</div>
+    <h1>Live Type Racer System Architecture</h1>
+    <div class="subtitle">
+      Faculty of Science & Technology (FST) | The ICFAI University, Sikkim<br>
+      Real-Time Synchronization Engine, Google Cloud Firestore Schemas & Data Flow
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print or Save as PDF</button>
+      <a href="/INNOVISION_2026_Type_Racer_Architecture.md" download="INNOVISION_2026_Architecture.md" class="btn btn-secondary">⬇️ Download Markdown (.md)</a>
+    </div>
+
+    <h2>1. Project Structure & Key Files</h2>
+    <p>The codebase is constructed with React 19, Vite, Tailwind CSS, and the Firebase Web SDK. Below is the purpose of every core module:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>File Path</th>
+          <th>Primary Role & Responsibilities</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>src/context/AuthContext.tsx</code></td>
+          <td>Manages participant registration sessions, localStorage caching, organizer PIN authentication, and remote roster wipe listener.</td>
+        </tr>
+        <tr>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Central state engine: orchestrates round creation, synchronized countdown starts, score submissions, retry grants, and real-time Firestore listeners.</td>
+        </tr>
+        <tr>
+          <td><code>src/hooks/useTypingEngine.ts</code></td>
+          <td>High-precision millisecond typing engine: calculates dynamic WPM, Raw WPM, Accuracy, Punctuation, monitors tab switches/blurs, and detects speed bursts.</td>
+        </tr>
+        <tr>
+          <td><code>src/pages/RegisterPage.tsx</code></td>
+          <td>Participant badge registration form: collects name, roll number, department, year, phone; validates fields; and issues competitor badge.</td>
+        </tr>
+        <tr>
+          <td><code>src/pages/ArenaPage.tsx</code></td>
+          <td>Live competition race arena: provides the synchronized waiting lobby, connects to the 10s countdown visualizer, and presents the final ResultCard.</td>
+        </tr>
+        <tr>
+          <td><code>src/pages/AdminPage.tsx</code></td>
+          <td>Organizer command center: live digital clock HUD, round activation, participant directory with WPM, accuracy, punctuation, retries, and database wipe.</td>
+        </tr>
+        <tr>
+          <td><code>src/utils/scoring.ts</code></td>
+          <td>Core math engine implementing standard Net WPM, Raw WPM, Accuracy %, and strict punctuation verification algorithms.</td>
+        </tr>
+        <tr>
+          <td><code>src/lib/firebase.ts</code></td>
+          <td>Initializes Firebase App, Auth instance, and Firestore database with long-polling failover.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. Firebase Database Architecture</h2>
+    <p>The application interacts with 4 collections and 1 configuration document in Cloud Firestore:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Collection / Document</th>
+          <th>Schema & Key Fields</th>
+          <th>Function</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>config/competition</code></td>
+          <td><code>status</code>, <code>activeRoundId</code>, <code>resultsPublished</code>, <code>announcement</code>, <code>lastRosterResetAt</code></td>
+          <td>Global competition state governing registration, live countdown, and result visibility.</td>
+        </tr>
+        <tr>
+          <td><code>participants/{id}</code></td>
+          <td><code>id</code>, <code>name</code>, <code>rollNo</code>, <code>email</code>, <code>department</code>, <code>year</code>, <code>phone</code>, <code>canRetry</code>, <code>disqualified</code></td>
+          <td>Stores competitor identity badges (no Google account login needed for students).</td>
+        </tr>
+        <tr>
+          <td><code>rounds/{id}</code></td>
+          <td><code>name</code>, <code>passageTitle</code>, <code>passageText</code>, <code>difficulty</code>, <code>duration</code>, <code>status</code>, <code>startAt</code></td>
+          <td>Championship round details and exact millisecond start time for synchronized countdowns.</td>
+        </tr>
+        <tr>
+          <td><code>attempts/{id}</code></td>
+          <td><code>participantId</code>, <code>roundId</code>, <code>wpm</code>, <code>rawWpm</code>, <code>accuracy</code>, <code>punctuationAccuracy</code>, <code>errors</code>, <code>keystrokes</code></td>
+          <td>Stores completed race results, keystroke telemetry, and anti-cheat audit flags.</td>
+        </tr>
+        <tr>
+          <td><code>admins/{uid}</code></td>
+          <td><code>email</code>, <code>name</code>, <code>role</code> (<code>superadmin</code>)</td>
+          <td>Faculty coordinator and organizer admin authorization.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. Typing Metrics Computation & Storage</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Calculation Formula</th>
+          <th>Firestore Field</th>
+          <th>Admin Display</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Roll No</strong></td>
+          <td>Inputted during registration badge issuance</td>
+          <td><code>attempts.rollNo</code></td>
+          <td>Dedicated Roll No column</td>
+        </tr>
+        <tr>
+          <td><strong>Department</strong></td>
+          <td>Inputted during registration (includes custom 'Others')</td>
+          <td><code>attempts.department</code></td>
+          <td>Department & Academic Year</td>
+        </tr>
+        <tr>
+          <td><strong>Net Speed (WPM)</strong></td>
+          <td><code>(correctChars / 5) / (elapsedSeconds / 60)</code></td>
+          <td><code>attempts.wpm</code></td>
+          <td>Highlighted Bold WPM badge</td>
+        </tr>
+        <tr>
+          <td><strong>Raw Speed</strong></td>
+          <td><code>(totalKeystrokes / 5) / (elapsedSeconds / 60)</code></td>
+          <td><code>attempts.rawWpm</code></td>
+          <td>Sub-metric below Net Speed</td>
+        </tr>
+        <tr>
+          <td><strong>Accuracy</strong></td>
+          <td><code>(correctChars / totalKeystrokes) * 100</code></td>
+          <td><code>attempts.accuracy</code></td>
+          <td>Green / Amber / Red accuracy pill</td>
+        </tr>
+        <tr>
+          <td><strong>Punctuation</strong></td>
+          <td>Strict comparison of all expected punctuation marks</td>
+          <td><code>attempts.punctuationAccuracy</code></td>
+          <td>Dedicated Punctuation % pill</td>
+        </tr>
+        <tr>
+          <td><strong>Status</strong></td>
+          <td>Dynamic status: Score Logged / In Lobby / Racing / Retry / Disqualified</td>
+          <td>Dynamic inference</td>
+          <td>Color-coded status badge</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Function Mapping</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Function</th>
+          <th>File Location</th>
+          <th>What It Does</th>
+          <th>Where It Is Called</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>registerParticipant()</code></td>
+          <td><code>src/context/AuthContext.tsx</code></td>
+          <td>Creates participant record in Firestore and caches session in localStorage.</td>
+          <td><code>RegisterPage.tsx</code> on form submit</td>
+        </tr>
+        <tr>
+          <td><code>useTypingEngine()</code></td>
+          <td><code>src/hooks/useTypingEngine.ts</code></td>
+          <td>Real-time keystroke processing, live statistics, auto-scroll, and anti-cheat logging.</td>
+          <td><code>TypingArena.tsx</code></td>
+        </tr>
+        <tr>
+          <td><code>triggerFinish()</code></td>
+          <td><code>src/hooks/useTypingEngine.ts</code></td>
+          <td>Finalizes typing attempt on timer expiration or full text completion.</td>
+          <td>Internal countdown timer in typing engine</td>
+        </tr>
+        <tr>
+          <td><code>submitRaceAttempt()</code></td>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Sanitizes typing payload and writes attempt document to Firestore.</td>
+          <td><code>handleOfficialFinish()</code> in <code>ArenaPage.tsx</code></td>
+        </tr>
+        <tr>
+          <td><code>startRoundCountdown()</code></td>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Sets future <code>startAt</code> epoch timestamp (+10s) and triggers synchronized countdown.</td>
+          <td>"Start Race" button in <code>AdminPage.tsx</code></td>
+        </tr>
+        <tr>
+          <td><code>clearAllParticipants()</code></td>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Wipes all participants, attempts, resets rounds to lobby, and updates <code>lastRosterResetAt</code>.</td>
+          <td>"Clear All Students & Reset to Start" in <code>AdminPage.tsx</code></td>
+        </tr>
+        <tr>
+          <td><code>grantRetry()</code></td>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Flags participant with <code>canRetry: true</code> and deletes previous score attempt.</td>
+          <td>"Grant Retry" button in <code>AdminPage.tsx</code></td>
+        </tr>
+        <tr>
+          <td><code>disqualifyParticipant()</code></td>
+          <td><code>src/context/CompetitionContext.tsx</code></td>
+          <td>Sets participant status to <code>disqualified: true</code>.</td>
+          <td>"Disqualify" button in <code>AdminPage.tsx</code></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>5. Step-by-Step Data Flow Diagram</h2>
+    <div class="flow-diagram">
+[Step 1: Registration]
+Student fills form on /register (Name, Roll No, Department)
+  │
+  ▼
+registerParticipant() writes to Firestore: participants/{id}
+LocalStorage caches competitor profile badge
+  │
+  ▼
+[Step 2: Live Lobby]
+Student navigates to /arena
+Firestore onSnapshot detects active Round 1 (status: 'created', startAt: null)
+TypingArena input is strictly locked: "⚠️ Race Not Started by Admin"
+  │
+  ▼
+[Step 3: Admin Triggers Synchronized Race]
+Organizer clicks "Start Race (10s Synchronized Countdown)" in Admin Dashboard
+startRoundCountdown() writes to Firestore:
+  rounds/{id}.status = 'countdown'
+  rounds/{id}.startAt = Date.now() + 10000
+  │
+  ▼
+[Step 4: Synchronized 10-Second Countdown Overlay]
+Firestore onSnapshot triggers <CountdownOverlay /> simultaneously on all devices
+Clocks count down in lockstep: 10, 9, 8... 3, 2, 1, GO!
+  │
+  ▼
+[Step 5: Typing Execution]
+At exact millisecond (currentTime >= startAt):
+Inputs unlock on all client browsers
+useTypingEngine tracks characters, caret position, and anti-cheat tab switches
+  │
+  ▼
+[Step 6: Completion & Score Submission]
+Clock reaches 00:00 or passage typed
+triggerFinish() computes Net WPM, Raw WPM, Accuracy %, Punctuation %, and Errors
+submitRaceAttempt() stores record in Firestore: attempts/{id}
+Student UI switches to official <ResultCard />
+  │
+  ▼
+[Step 7: Real-Time Admin Table Update]
+Admin onSnapshot detects new attempt document
+Student row updates in real time:
+  Net Speed: 58.4 WPM | Accuracy: 98% | Punctuation: 100% | Status: "SCORE LOGGED"
+    </div>
+
+    <h2>6. Anti-Cheat & Tournament Reliability</h2>
+    <ul>
+      <li><strong>Tab Switch & Blur Monitor:</strong> Event listeners track when a student switches tabs or minimizes the window. 3+ blurs automatically flag the submission for organizer review.</li>
+      <li><strong>Keystroke Cadence Analysis:</strong> Inter-keystroke intervals &lt; 25ms are detected as script injection or copy-paste bots and flagged.</li>
+      <li><strong>Centralized Epoch Timing:</strong> Clocks are synchronized via cloud epoch timestamps, preventing local computer time alterations from tampering with duration.</li>
+      <li><strong>High-Concurrency Protection:</strong> Uses deterministic composite document keys (<code>att_${roundId}_${participantId}</code>), Map-based snapshot deduplication, and an 8-second in-flight sync grace buffer to eliminate race conditions when 10+ students finish simultaneously.</li>
+    </ul>
+
+    <div class="actions" style="margin-top: 40px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <a href="/INNOVISION_2026_Type_Racer_Architecture.md" download="INNOVISION_2026_Architecture.md" class="btn btn-secondary">⬇️ Download Markdown (.md)</a>
+    </div>
+  </div>
+</body>
+</html>

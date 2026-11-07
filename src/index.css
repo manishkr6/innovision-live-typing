@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #FBF8F3;
+  --color-paper-deep: #F3EDE3;
+  --color-ink: #1C1917;
+  --color-ink-soft: #3F3A36;
+  --color-ink-muted: #5F5852;
+  --color-ink-line: #E2D9CC;
+
+  --color-marigold-50: #FFF4EC;
+  --color-marigold-100: #FDE3D0;
+  --color-marigold-400: #FB923C;
+  --color-marigold-500: #C2410C;
+  --color-marigold-600: #9A3412;
+  --color-marigold-700: #7C2D12;
+
+  --color-flag-blue: #2456A6;
+  --color-flag-red: #C2412D;
+  --color-flag-green: #2F7D4F;
+  --color-flag-yellow: #D99A0B;
+  --color-flag-redText: #9B2C1C;
+  --color-flag-greenText: #24603D;
+
+  --color-night: #17151F;
+  --color-cyber-dark: #0B0F19;
+  --color-cyber-darker: #07090E;
+  --color-cyber-card: #0D111C;
+  --color-cyber-cardHover: #131B2E;
+  --color-cyber-surface: #111726;
+  --color-cyber-border: rgba(255, 255, 255, 0.08);
+  --color-cyber-purple: #6366F1;
+  --color-cyber-blue: #3B82F6;
+  --color-cyber-cyan: #38BDF8;
+  --color-cyber-pink: #818CF8;
+
+  --font-heading: 'Bricolage Grotesque', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-esports: 'Bebas Neue', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  /* Focus ring rules from DESIGN.md Section 8 */
+  :focus-visible {
+    outline: 2px solid #C2410C;
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  .dark-arena :focus-visible,
+  .night-arena :focus-visible {
+    outline: 2px solid #38BDF8;
+    outline-offset: 2px;
+  }
+}
+
+/* Caret blinking animation for typing arena */
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-caret {
+  animation: caret-pulse 1s infinite;
+}
+
+/* Button shimmer effect from DESIGN.md 6.1 */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-150%) rotate(45deg); }
+  30%, 100% { transform: translateX(250%) rotate(45deg); }
+}
+
+.btn-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  animation: shimmer-sweep 4s infinite;
+  pointer-events: none;
+}
+
+/* Infinite marquee banner */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Smooth line scroll for passage typing */
+.typing-passage-container {
+  scroll-behavior: smooth;
+}

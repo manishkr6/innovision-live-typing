@@ -1,0 +1,6 @@
+{
+  "name": "INNOVISION 2026 Live Typing Arena",
+  "description": "Real-time synchronized typing race and live leaderboard for INNOVISION 2026 by FST, The ICFAI University Sikkim with IIC.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

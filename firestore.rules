@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      allow read, write: if true;
+    }
+
+    // Config collection (Competition lifecycle & active round)
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Rounds collection
+    match /rounds/{roundId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Participants collection - Open registration & admin management
+    match /participants/{participantId} {
+      allow read, write: if true;
+    }
+
+    // Attempts collection - Open submission & admin management
+    match /attempts/{attemptId} {
+      allow read, write: if true;
+    }
+  }
+}

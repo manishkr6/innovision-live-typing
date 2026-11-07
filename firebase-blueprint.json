@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "Participant": {
+      "title": "Participant",
+      "description": "Registered competitor in the typing competition",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "rollNo": { "type": "string", "maxLength": 50 },
+        "department": { "type": "string", "maxLength": 50 },
+        "year": { "type": "string", "maxLength": 20 },
+        "phone": { "type": "string", "maxLength": 25 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "canRetry": { "type": "boolean" },
+        "disqualified": { "type": "boolean" }
+      },
+      "required": ["name", "email", "rollNo", "department", "year", "phone"]
+    },
+    "Round": {
+      "title": "Round",
+      "description": "Competition race round configured by organizers",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "passageId": { "type": "string", "maxLength": 50 },
+        "passageTitle": { "type": "string", "maxLength": 100 },
+        "passageText": { "type": "string", "maxLength": 5000 },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "duration": { "type": "number" },
+        "allowBackspaceAfterSpace": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["created", "countdown", "in_progress", "completed", "reset"] },
+        "startAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "passageText", "duration", "status"]
+    },
+    "Attempt": {
+      "title": "Attempt",
+      "description": "Official typing race submission by a participant",
+      "type": "object",
+      "properties": {
+        "participantId": { "type": "string", "maxLength": 128 },
+        "participantName": { "type": "string", "maxLength": 100 },
+        "department": { "type": "string", "maxLength": 50 },
+        "year": { "type": "string", "maxLength": 20 },
+        "roundId": { "type": "string", "maxLength": 128 },
+        "wpm": { "type": "number" },
+        "rawWpm": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "punctuationAccuracy": { "type": "number" },
+        "errors": { "type": "number" },
+        "correctChars": { "type": "number" },
+        "totalKeystrokes": { "type": "number" },
+        "blurCount": { "type": "number" },
+        "flagged": { "type": "boolean" },
+        "flagReason": { "type": "string", "maxLength": 200 },
+        "keystrokes": { "type": "string", "maxLength": 20000 },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participantId", "roundId", "wpm", "accuracy", "submittedAt"]
+    },
+    "Config": {
+      "title": "Config",
+      "description": "Global competition lifecycle and public display settings",
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["registration_open", "waiting", "live", "finished"] },
+        "activeRoundId": { "type": "string", "maxLength": 128 },
+        "resultsPublished": { "type": "boolean" },
+        "announcement": { "type": "string", "maxLength": 255 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["status", "resultsPublished"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Organizer authorized to manage competition rounds and participants",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 150 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["superadmin", "organizer"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/participants/{participantId}": {
+      "schema": { "$ref": "Participant" },
+      "description": "Participant registrations"
+    },
+    "/rounds/{roundId}": {
+      "schema": { "$ref": "Round" },
+      "description": "Competition rounds created by organizers"
+    },
+    "/attempts/{attemptId}": {
+      "schema": { "$ref": "Attempt" },
+      "description": "Participant official race scores"
+    },
+    "/config/{configId}": {
+      "schema": { "$ref": "Config" },
+      "description": "Global competition state and active round"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "Admin" },
+      "description": "Whitelisted organizers"
+    }
+  }
+}

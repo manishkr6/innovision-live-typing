@@ -120,18 +120,6 @@ export const AdminPage: React.FC = () => {
     ? Math.min(100, Math.round((raceElapsedSeconds / activeRound.duration) * 100))
     : 0;
 
-  // AUTOMATIC STOP ON TIME REACHED:
-  // If timer reaches duration, automatically invoke stopRound
-  useEffect(() => {
-    if (!activeRound?.id || !roundEndAt || !roundStartAt) return;
-    // CRITICAL: Stop timer should ONLY trigger when race is genuinely 'in_progress' - NEVER during countdown!
-    if (activeRound.status !== 'in_progress') return;
-
-    if (currentTime >= roundStartAt && currentTime >= roundEndAt) {
-      stopRound(activeRound.id);
-    }
-  }, [currentTime, roundEndAt, roundStartAt, activeRound?.status, activeRound?.id]);
-
   // Calculate live statistics
   const currentRoundAttempts = activeRound
     ? attempts.filter(a => a.roundId === activeRound.id)
@@ -141,6 +129,24 @@ export const AdminPage: React.FC = () => {
   const completedParticipantIds = new Set(currentRoundAttempts.map(a => a.participantId));
   const finishedCount = completedParticipantIds.size;
   const waitingCount = Math.max(0, participants.length - finishedCount);
+
+  // AUTOMATIC STOP ON TIME REACHED:
+  // In Approach A, allow competitors who started slightly late to finish their full duration.
+  // Conclude the round when:
+  // (a) All registered competitors have finished their submission
+  // (b) OR the round duration plus a 20-second grace window expires
+  useEffect(() => {
+    if (!activeRound?.id || !roundEndAt || !roundStartAt) return;
+    // CRITICAL: Stop timer should ONLY trigger when race is genuinely 'in_progress' - NEVER during countdown!
+    if (activeRound.status !== 'in_progress') return;
+
+    const allFinished = participants.length > 0 && finishedCount >= participants.length;
+    const graceExpired = currentTime >= (roundEndAt + 20000);
+
+    if (currentTime >= roundEndAt && (allFinished || graceExpired)) {
+      stopRound(activeRound.id);
+    }
+  }, [currentTime, roundEndAt, roundStartAt, activeRound?.status, activeRound?.id, finishedCount, participants.length]);
 
   // Handle CSV export
   const handleExportCSV = () => {
@@ -733,7 +739,14 @@ export const AdminPage: React.FC = () => {
                 {/* Animated Progress Bar */}
                 <div className="mt-5 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-xs font-mono text-gray-400 mb-2">
-                    <span>Elapsed: {raceElapsedSeconds}s / {activeRound?.duration || 60}s</span>
+                    <span>
+                      Elapsed: {raceElapsedSeconds}s / {activeRound?.duration || 60}s
+                      {currentTime >= (roundEndAt || 0) && (
+                        <span className="ml-2 text-amber-400 font-bold animate-pulse">
+                          (Waiting for in-flight competitors)
+                        </span>
+                      )}
+                    </span>
                     <span className="text-[#38BDF8] font-bold">{finishedCount} / {participants.length} finished</span>
                   </div>
                   <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">

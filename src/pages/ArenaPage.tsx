@@ -57,46 +57,25 @@ export const ArenaPage: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Synchronized clock calibration to eliminate device clock skew across 20+ student computers
-  const clockOffsetRef = useRef<number>(0);
-  useEffect(() => {
-    if (activeRound?.countdownStartedAt && activeRound.status === 'countdown') {
-      const offset = Date.now() - Number(activeRound.countdownStartedAt);
-      if (Math.abs(offset) < 86400000) {
-        clockOffsetRef.current = offset;
-      }
-    } else if (activeRound?.status === 'created' || activeRound?.status === 'reset') {
-      clockOffsetRef.current = 0;
-    }
-  }, [activeRound?.countdownStartedAt, activeRound?.status]);
-
-  // Compute live race and countdown states calibrated to the organizer's clock
+  // Start epoch timestamp from active round
   const startAt = activeRound?.startAt ? Number(activeRound.startAt) : null;
-  const localStartAt = startAt ? startAt + clockOffsetRef.current : null;
 
   const isCountdownActive = Boolean(
     activeRound &&
     activeRound.status === 'countdown' &&
-    localStartAt &&
-    currentTime < localStartAt
-  );
-
-  const isRoundTimeExpired = Boolean(
-    localStartAt &&
-    activeRound?.duration &&
-    currentTime >= (localStartAt + activeRound.duration * 1000)
+    startAt &&
+    currentTime < startAt
   );
 
   const isRaceRunning = Boolean(
     activeRound &&
-    !isRoundTimeExpired &&
-    activeRound.status !== 'completed' &&
+    activeRound.status !== 'created' &&
     activeRound.status !== 'reset' &&
-    (activeRound.status === 'in_progress' || (activeRound.status === 'countdown' && localStartAt && currentTime >= localStartAt))
+    (activeRound.status === 'in_progress' || (activeRound.status === 'countdown' && startAt && currentTime >= startAt))
   );
 
-  // If admin has not started the competition
-  const isCompetitionLocked = !isRaceRunning;
+  // If admin has not started the competition or countdown is active
+  const isCompetitionLocked = isCountdownActive || !isRaceRunning || activeRound?.status === 'created' || activeRound?.status === 'reset';
 
   // Load cached attempt on mount if available (guarantees result card recovery across reloads or slow networks)
   useEffect(() => {
@@ -247,13 +226,13 @@ export const ArenaPage: React.FC = () => {
 
   // 3. Already Submitted Attempt:
   // An attempt is fresh for the active round if its roundId matches activeRound.id,
-  // and it was submitted during or after localStartAt (if localStartAt is defined).
+  // and it was submitted during or after startAt (if startAt is defined).
   const attemptTimestamp = getAttemptTimestamp(currentAttempt);
   const isCurrentAttemptFresh = Boolean(
     currentAttempt &&
     activeRound &&
     currentAttempt.roundId === activeRound.id &&
-    (!localStartAt || !attemptTimestamp || attemptTimestamp >= (localStartAt - 2000))
+    (!startAt || !attemptTimestamp || attemptTimestamp >= (startAt - 2000))
   );
 
   // Show Result Card if:
@@ -300,9 +279,9 @@ export const ArenaPage: React.FC = () => {
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-[#17151F] text-white py-8 px-4 sm:px-6 lg:px-8">
       {/* Synchronized 10-Second Countdown Overlay */}
-      {isCountdownActive && localStartAt && (
+      {isCountdownActive && startAt && (
         <CountdownOverlay
-          startAt={localStartAt}
+          startAt={startAt}
           onCountdownComplete={() => {
             setCurrentTime(Date.now());
           }}
@@ -356,14 +335,14 @@ export const ArenaPage: React.FC = () => {
               isRaceActive={isRaceRunning}
               isLocked={isCompetitionLocked}
               roundStatus={activeRound.status}
+              roundId={activeRound.id}
               lockMessage={
                 isCountdownActive
-                  ? `Countdown in progress! Race unlocks in ${Math.max(0, Math.ceil(((localStartAt || 0) - currentTime) / 1000))}s. All competitors will start simultaneously.`
-                  : isRoundTimeExpired || activeRound.status === 'completed'
+                  ? `Countdown in progress! Race unlocks in ${Math.max(0, Math.ceil(((startAt || 0) - currentTime) / 1000))}s. All competitors will start simultaneously.`
+                  : activeRound.status === 'completed'
                   ? 'Official round time has expired. Submissions are finalized. Please await next round from organizer.'
                   : '⚠️ Race Not Started by Admin. The typing arena is locked. When the organizer clicks "Start Race", a 10-second synchronized countdown will unlock all competitors simultaneously.'
               }
-              synchronizedStartTime={localStartAt}
               onFinish={handleOfficialFinish}
             />
           </div>

@@ -14,6 +14,7 @@ interface TypingArenaProps {
   isRaceActive?: boolean;
   isLocked?: boolean;
   roundStatus?: string;
+  roundId?: string;
   lockMessage?: string;
   synchronizedStartTime?: number | null;
   onFinish?: (results: {
@@ -42,6 +43,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   isRaceActive = true,
   isLocked = false,
   roundStatus,
+  roundId,
   lockMessage,
   synchronizedStartTime = null,
   onFinish,
@@ -73,6 +75,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
     isRaceActive,
     isLocked,
     roundStatus,
+    roundId,
     synchronizedStartTime,
     onFinish,
   });

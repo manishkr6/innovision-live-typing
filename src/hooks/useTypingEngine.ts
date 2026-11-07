@@ -17,7 +17,8 @@ interface TypingEngineOptions {
   isRaceActive?: boolean;
   isLocked?: boolean; // When true, typing is blocked (e.g. before competition starts)
   roundStatus?: string; // Round status from competition ('created', 'countdown', 'in_progress', 'completed', 'reset')
-  synchronizedStartTime?: number | null; // Exact epoch ms when official race clock began
+  roundId?: string; // Active round ID for local session persistence
+  synchronizedStartTime?: number | null; // Optional epoch ms
   onFinish?: (results: {
     wpm: number;
     rawWpm: number;
@@ -42,6 +43,7 @@ export function useTypingEngine({
   isRaceActive = true,
   isLocked = false,
   roundStatus,
+  roundId,
   synchronizedStartTime = null,
   onFinish,
 }: TypingEngineOptions) {
@@ -257,66 +259,88 @@ export function useTypingEngine({
     }
   }, [isPractice]);
 
-  // Synchronized Auto-Starting Clock (when synchronizedStartTime is provided)
-  // Time counts down in lockstep across all competitors
+  // Approach A: Guaranteed full duration per participant
+  // Initialize participant's personal timer when arena unlocks
   useEffect(() => {
     if (isFinished) return;
 
-    if (synchronizedStartTime) {
-      const checkClock = () => {
-        const now = Date.now();
-        if (now < synchronizedStartTime) {
-          setTimeLeft(durationSeconds);
-          return;
-        }
-
-        const elapsed = (now - synchronizedStartTime) / 1000;
-        const remaining = Math.max(0, durationSeconds - elapsed);
-        setTimeLeft(remaining);
-
-        if (remaining <= 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          triggerFinish();
-        }
-      };
-
-      checkClock();
-      timerRef.current = setInterval(checkClock, 100);
-
-      return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-    } else if (startTime) {
-      const checkClock = () => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const remaining = Math.max(0, durationSeconds - elapsed);
-        setTimeLeft(remaining);
-
-        if (remaining <= 0) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          triggerFinish();
-        }
-      };
-
-      checkClock();
-      timerRef.current = setInterval(checkClock, 100);
-
-      return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-    } else {
+    // Reset timer on round reset or preparation
+    if (roundStatus === 'created' || roundStatus === 'countdown' || roundStatus === 'reset') {
+      setStartTime(null);
       setTimeLeft(durationSeconds);
+      if (roundId) {
+        try {
+          sessionStorage.removeItem(`innovision_race_start_${roundId}`);
+        } catch {}
+      }
+      return;
     }
-  }, [synchronizedStartTime, startTime, isFinished, durationSeconds, triggerFinish]);
 
-  // Organizer manual conclusion trigger (e.g. Stop Race clicked)
-  useEffect(() => {
-    if (roundStatus === 'completed' && !isFinished && !isPractice) {
-      if (synchronizedStartTime && Date.now() >= synchronizedStartTime) {
-        triggerFinish();
+    // Start timer the moment the race is live and unlocked
+    if (!isLocked && isRaceActive && !isPractice) {
+      if (!startTime) {
+        let initialStart = Date.now();
+        if (roundId) {
+          try {
+            const saved = sessionStorage.getItem(`innovision_race_start_${roundId}`);
+            if (saved) {
+              const parsed = Number(saved);
+              if (!isNaN(parsed) && (Date.now() - parsed) < (durationSeconds + 15) * 1000) {
+                initialStart = parsed;
+              } else {
+                sessionStorage.setItem(`innovision_race_start_${roundId}`, String(initialStart));
+              }
+            } else {
+              sessionStorage.setItem(`innovision_race_start_${roundId}`, String(initialStart));
+            }
+          } catch {}
+        }
+        setStartTime(initialStart);
       }
     }
-  }, [roundStatus, isFinished, isPractice, synchronizedStartTime, triggerFinish]);
+  }, [isLocked, isRaceActive, isFinished, roundStatus, roundId, durationSeconds, startTime, isPractice]);
+
+  // Personal Countdown Timer (Guarantees full durationSeconds for each competitor)
+  useEffect(() => {
+    if (isFinished || !startTime) {
+      if (!startTime) setTimeLeft(durationSeconds);
+      return;
+    }
+
+    const checkClock = () => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      const remaining = Math.max(0, durationSeconds - elapsed);
+      setTimeLeft(remaining);
+
+      if (remaining <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        triggerFinish();
+      }
+    };
+
+    checkClock();
+    timerRef.current = setInterval(checkClock, 100);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [startTime, isFinished, durationSeconds, triggerFinish]);
+
+  // When organizer concludes the round:
+  // If participant is actively typing, allow them to finish their allotted duration!
+  // Only auto-finalize if their own personal duration has elapsed (with 2s network buffer).
+  useEffect(() => {
+    if (roundStatus === 'completed' && !isFinished && !isPractice) {
+      if (startTime) {
+        const elapsed = (Date.now() - startTime) / 1000;
+        if (elapsed >= durationSeconds + 2) {
+          triggerFinish();
+        }
+      } else {
+        setIsFinished(true);
+      }
+    }
+  }, [roundStatus, isFinished, isPractice, startTime, durationSeconds, triggerFinish]);
 
   // Handle keyboard inputs
   const handleKeyDown = useCallback(

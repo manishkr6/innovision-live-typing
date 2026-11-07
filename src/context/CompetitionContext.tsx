@@ -701,6 +701,20 @@ export const CompetitionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const attemptDocId = `att_${targetRoundId}_${currentParticipantId}`;
     const attemptDocRef = doc(db, 'attempts', attemptDocId);
 
+    // Safeguard: Never overwrite an existing valid non-zero attempt with an empty 0-keystroke submission
+    const existingAttempt = attempts.find(
+      a => a.id === attemptDocId || (a.participantId === currentParticipantId && a.roundId === targetRoundId)
+    );
+    if (
+      existingAttempt &&
+      (existingAttempt.wpm > 0 || existingAttempt.totalKeystrokes > 0) &&
+      sanitizedAttempt.totalKeystrokes === 0 &&
+      sanitizedAttempt.wpm === 0
+    ) {
+      console.warn('Prevented 0-keystroke submission from overwriting existing valid attempt for', currentParticipantId);
+      return attemptDocId;
+    }
+
     // 1. Immediately cache locally in localStorage (Zero Data-Loss Guarantee)
     const localAttempt: Attempt = {
       ...sanitizedAttempt,

@@ -9,6 +9,19 @@ import { ResultCard } from '../components/arena/ResultCard';
 import { rankAttempts } from '../utils/scoring';
 import { Attempt } from '../types';
 
+// Helper to safely extract timestamp in milliseconds from any format (number, Firestore Timestamp, Date, string)
+const getAttemptTimestamp = (att: Attempt | null | undefined): number => {
+  if (!att?.submittedAt) return 0;
+  if (typeof att.submittedAt === 'number') return att.submittedAt;
+  if (typeof att.submittedAt.toMillis === 'function') return att.submittedAt.toMillis();
+  if (typeof att.submittedAt.seconds === 'number') {
+    return att.submittedAt.seconds * 1000 + (att.submittedAt.nanoseconds ? Math.floor(att.submittedAt.nanoseconds / 1000000) : 0);
+  }
+  if (att.submittedAt instanceof Date) return att.submittedAt.getTime();
+  const parsed = Date.parse(att.submittedAt);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export const ArenaPage: React.FC = () => {
   const { user, participant } = useAuth();
   const { config, activeRound, userAttempt, submitRaceAttempt, participants, refreshAllData, attempts } = useCompetition();
@@ -16,6 +29,8 @@ export const ArenaPage: React.FC = () => {
   const [currentTime, setCurrentTime] = useState<number>(Date.now());
   const [justSubmittedAttempt, setJustSubmittedAttempt] = useState<Attempt | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const currentAttempt = justSubmittedAttempt || userAttempt;
 
   // Ensure viewport always opens at the top of the race arena
   useEffect(() => {
@@ -93,7 +108,8 @@ export const ArenaPage: React.FC = () => {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (startAt && parsed.submittedAt && parsed.submittedAt < (startAt - 2000)) {
+          const parsedTime = getAttemptTimestamp(parsed);
+          if (startAt && parsedTime && parsedTime < (startAt - 2000)) {
             // Stale attempt from a previous sprint: remove it
             localStorage.removeItem(`innovision_cached_attempt_${activeRound.id}_${participant.id}`);
           } else {
@@ -108,6 +124,18 @@ export const ArenaPage: React.FC = () => {
   const handleOfficialFinish = async (results: any) => {
     if (!participant || !activeRound) return;
     if (submitting) return;
+
+    // Safety guard: NEVER overwrite an existing valid score with a 0-keystroke submission
+    if (
+      currentAttempt &&
+      currentAttempt.roundId === activeRound.id &&
+      (currentAttempt.wpm > 0 || currentAttempt.totalKeystrokes > 0) &&
+      (!results.totalKeystrokes || results.totalKeystrokes === 0) &&
+      (!results.wpm || results.wpm === 0)
+    ) {
+      console.warn('Ignored 0-keystroke submission to protect existing valid attempt.');
+      return;
+    }
 
     setSubmitting(true);
     const attemptDocId = `att_${activeRound.id}_${participant.id}`;
@@ -208,7 +236,6 @@ export const ArenaPage: React.FC = () => {
   }
 
   // Compute dynamic rank among official submissions
-  const currentAttempt = justSubmittedAttempt || userAttempt;
   const roundAttempts = attempts.filter(
     a => a.roundId === (currentAttempt?.roundId || activeRound?.id)
   );
@@ -219,19 +246,33 @@ export const ArenaPage: React.FC = () => {
   const dynamicRank = myRankIndex !== -1 ? myRankIndex + 1 : undefined;
 
   // 3. Already Submitted Attempt:
-  // An attempt is only valid for the current race sprint if it was submitted during or after localStartAt
-  const isCurrentAttemptFresh = currentAttempt && localStartAt && currentAttempt.submittedAt
-    ? currentAttempt.submittedAt >= (localStartAt - 2000)
-    : Boolean(currentAttempt && !localStartAt);
-
-  // Show Result Card ONLY IF:
-  // (a) Competitor explicitly finished in this session (justSubmittedAttempt exists and is fresh)
-  // (b) OR the round time has expired / round completed AND competitor has a submitted attempt
-  const isRoundInPreparation = activeRound?.status === 'created' || activeRound?.status === 'countdown' || activeRound?.status === 'reset';
-  const shouldShowResult = !isRoundInPreparation && (
-    (justSubmittedAttempt && isCurrentAttemptFresh) ||
-    (isCurrentAttemptFresh && !participant.canRetry && (isRoundTimeExpired || activeRound?.status === 'completed'))
+  // An attempt is fresh for the active round if its roundId matches activeRound.id,
+  // and it was submitted during or after localStartAt (if localStartAt is defined).
+  const attemptTimestamp = getAttemptTimestamp(currentAttempt);
+  const isCurrentAttemptFresh = Boolean(
+    currentAttempt &&
+    activeRound &&
+    currentAttempt.roundId === activeRound.id &&
+    (!localStartAt || !attemptTimestamp || attemptTimestamp >= (localStartAt - 2000))
   );
+
+  // Show Result Card if:
+  // (a) Active round is not in preparation (not created, countdown, or reset)
+  // (b) AND competitor has already submitted a fresh attempt for this round
+  // (c) AND the organizer has not granted a retry token (participant.canRetry)
+  const isRoundInPreparation =
+    !activeRound ||
+    activeRound.status === 'created' ||
+    activeRound.status === 'countdown' ||
+    activeRound.status === 'reset';
+
+  const shouldShowResult =
+    !isRoundInPreparation &&
+    Boolean(
+      currentAttempt &&
+      isCurrentAttemptFresh &&
+      !participant.canRetry
+    );
 
   if (shouldShowResult && currentAttempt) {
     return (

@@ -177,6 +177,16 @@ export function useTypingEngine({
       return;
     }
 
+    // In official race arena: do NOT auto-submit an empty 0-keystroke attempt if user never typed anything
+    if (!isPractice && !hasTyped && keystrokesRef.current.length === 0) {
+      finishTriggered.current = true;
+      setIsFinished(true);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      return;
+    }
+
     finishTriggered.current = true;
     setIsFinished(true);
 

@@ -37,6 +37,11 @@ export const ArenaPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
   }, []);
 
+  // Whenever active round ID changes, clear the previous round's submitted state
+  useEffect(() => {
+    setJustSubmittedAttempt(null);
+  }, [activeRound?.id]);
+
   // When round resets, is deleted, or enters countdown, clear any locally cached attempt
   useEffect(() => {
     if (!activeRound || activeRound.status === 'countdown' || activeRound.status === 'created' || activeRound.status === 'reset') {
@@ -276,6 +281,30 @@ export const ArenaPage: React.FC = () => {
     );
   }
 
+  // 4. Organizer Concluded Round without an attempt from competitor
+  if (activeRound?.status === 'completed' && !currentAttempt) {
+    return (
+      <div className="min-h-[calc(100vh-4.5rem)] bg-[#17151F] py-16 px-4 flex items-center justify-center text-white">
+        <div className="max-w-md w-full rounded-3xl bg-[#0D111C] border border-white/10 p-8 text-center shadow-2xl">
+          <Clock className="w-12 h-12 text-[#FB923C] mx-auto mb-4" />
+          <h2 className="text-2xl font-bold font-['Bricolage_Grotesque',sans-serif] text-white mb-2">
+            Round Concluded
+          </h2>
+          <p className="text-sm text-gray-400 mb-6">
+            The organizer has concluded this round. Submissions are finalized. Please check the live leaderboard or await the next round from the organizer.
+          </p>
+          <Link
+            to="/leaderboard"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#C2410C] hover:bg-[#9A3412] text-white font-bold text-sm shadow-md transition-all"
+          >
+            <Trophy className="w-4 h-4" />
+            <span>View Live Leaderboard</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-4.5rem)] bg-[#17151F] text-white py-8 px-4 sm:px-6 lg:px-8">
       {/* Synchronized 10-Second Countdown Overlay */}
@@ -326,7 +355,7 @@ export const ArenaPage: React.FC = () => {
         {activeRound ? (
           <div>
             <TypingArena
-              key={`official-${activeRound.id}`}
+              key={`official-${activeRound.id}-${activeRound.startAt || 'init'}`}
               passageText={activeRound.passageText}
               passageTitle={activeRound.passageTitle}
               difficulty={activeRound.difficulty}
@@ -336,6 +365,7 @@ export const ArenaPage: React.FC = () => {
               isLocked={isCompetitionLocked}
               roundStatus={activeRound.status}
               roundId={activeRound.id}
+              synchronizedStartTime={startAt}
               lockMessage={
                 isCountdownActive
                   ? `Countdown in progress! Race unlocks in ${Math.max(0, Math.ceil(((startAt || 0) - currentTime) / 1000))}s. All competitors will start simultaneously.`
